@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <RF24.h>
+#include "payload.hpp"
 
-const u8 PAYLOAD_SIZE = 9;
 const u64 address = 0x67229BA389;
 const u8 channel = 68;
 static RF24 radio(PIN_RADIO_CE, PIN_RADIO_CSN);
@@ -29,6 +29,7 @@ void listener_setup() {
 }
 
 static byte buf[PAYLOAD_SIZE];
+static Payload payload(&buf);
 
 void listener_loop() {
   if (!radio.available()) {
@@ -50,9 +51,14 @@ void listener_loop() {
   raw_hex[(payload_size * 3) - 1] = '\0';
 
   printf(
-    "t=%07.3f raw=[%s]\n",
+    "t=%07.3f raw=[%s] device_id=%x seq=%03d op=(%u, %d, %s)\n",
     millis() / 1000.0f,
-    raw_hex
+    raw_hex,
+    payload.device_id(),
+    payload.seq(),
+    payload.action(),
+    payload.direction(),
+    payload.to_string().c_str()
   );
 }
 
