@@ -1,13 +1,17 @@
 #include <Arduino.h>
-
-u32 counter = 0;
+#include <SPI.h>
+#include <printf.h>
+#include "listener.hpp"
 
 void setup() {
   Serial.begin(MONITOR_SPEED);
+  printf_begin();
+
   printf("\n\nstart\n");
+
+  listener_setup();
 }
 
 void loop() {
-  printf("%d\n", counter++);
-  delay(100);
+  listener_loop();
 }
