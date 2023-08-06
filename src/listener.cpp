@@ -37,6 +37,7 @@ void listener_loop() {
 
   u8 payload_size = radio.getDynamicPayloadSize();
   if (payload_size != PAYLOAD_SIZE) {
+    radio.flush_rx();
     return;
   }
 
