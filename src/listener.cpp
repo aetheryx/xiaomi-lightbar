@@ -1,64 +1,37 @@
 #include <Arduino.h>
-#include <RF24.h>
+#include "radio.hpp"
 #include "payload.hpp"
-
-const u64 address = 0x67229BA389;
-const u8 channel = 68;
-static RF24 radio(PIN_RADIO_CE, PIN_RADIO_CSN);
+#include "listener.hpp"
 
 void listener_setup() {
-  if (!radio.begin()) {
-    while (1) {
-      printf("radio failed to initialise\n");
-    }
-  }
-
-  radio.openReadingPipe(0, address);
-
-  radio.setChannel(channel);
-  radio.setDataRate(RF24_2MBPS);
-  radio.setAutoAck(false);
-  radio.setAddressWidth(5); 
-  radio.setCRCLength(RF24_CRC_DISABLED);
-  radio.disableAckPayload(); 
-  radio.enableDynamicPayloads();
-
-  radio.closeReadingPipe(1);
-  radio.startListening();
-  radio.printPrettyDetails();
+  radio.configure();
+  radio.open_rx();
 }
-
-static byte buf[PAYLOAD_SIZE];
-static Payload payload(&buf);
 
 void listener_loop() {
   if (!radio.available()) {
     return;
   }
 
-  u8 payload_size = radio.getDynamicPayloadSize();
-  if (payload_size != PAYLOAD_SIZE) {
-    radio.flush_rx();
-    return;
-  }
+  static byte buf[PAYLOAD_SIZE];
+  static Payload payload(&buf[3]);
 
-  radio.read(&buf, payload_size);
+  radio.read(&buf, PAYLOAD_SIZE);
 
-  char raw_hex[(payload_size * 3)];
-  for (int i = 0; i < payload_size; i++) {
+  char raw_hex[(PAYLOAD_SIZE * 3)];
+  for (int i = 0; i < PAYLOAD_SIZE; i++) {
     sprintf(&raw_hex[i * 3], "%02X ", buf[i]);
   }
-  raw_hex[(payload_size * 3) - 1] = '\0';
+  raw_hex[(PAYLOAD_SIZE * 3) - 1] = '\0';
 
   printf(
-    "t=%07.3f raw=[%s] device_id=%x seq=%03d op=(%u, %d, %s)\n",
-    millis() / 1000.0f,
-    raw_hex,
+    "device_id=%x seq=%03u field=%02u direction=%u action=%03u to_string=%s raw=[%s]\n",
     payload.device_id(),
     payload.seq(),
-    payload.action(),
+    payload.field(),
     payload.direction(),
-    payload.to_string().c_str()
+    payload.action(),
+    payload.to_string().c_str(),
+    raw_hex
   );
 }
-
