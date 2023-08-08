@@ -2,37 +2,21 @@
 #include "payload.hpp"
 
 /**
- * payload spec:
- * the remote uses DPL, but the encoded payload length always seems to be 9 bytes. any 
- * payloads I was able to intercept that had other sizes, just seemed to have bit errors 
- * in the 6-bit payload length field, and garbage after the 9th byte
- * 
- * bits [0, 8): constant 0x4
- *    - padding for 9-bit packet control field?
- * 
- * bits [8, 40): device id
- *    - n.b.: I'm not exactly sure where the boundaries between the first constant byte
- *      and the device ID are, because I only have two devices to test. might begin
- *      before or after bit 8, or there might be more constant data before bit 40
- * 
- * bits [42, 50): packet sequence number
- *    - used to dedupe payloads on the receiver. (E)SB acks don't seem to be enabled,
- *      the remote just sends a bunch of payloads for each action and the receiver 
- *      dedupes them
- * 
- * bits [55, 64): command
- *    - bits [55, 56]: action (see enum Action in payload.hpp)
- *    - bit 57: direction (see enum Direction in payload.hpp)
- *        - when there's no rotation: short press = high, long press = low
- *    - bits [58, 64)
- *        - more or less garbage data
- *        - for rotating actions, it's actually the entire range of bits [57, 64) that 
- *          contain the direction (all 0x0 or 0x7F), but I only read the first bit in 
- *          this range (57). rotationless actions will forcibly set bit 57, but
- *          the subsequent bits in [58, 64) retain what they were set to previously
- *          (i.e. the direction of the previous rotating action)
- * 
- * bits [64, 72): crc probably
+ * payload spec
+ *  - byte 0: preamble
+ *    - constant 0xAA
+ *  - bytes [1, 5]: RF address
+ *    - address width: 5 bytes
+ *    - constant 0x67, 0x22, 0x9B, 0xA3, 0x89
+ *  - bytes [6, 7]: PIDF
+ *    - constant 0x26, 0x82 (payload size 9, packet ID 0b10, ack bit 0b1)
+ *  - bytes [8, 14]: payload
+ *    - bytes [0, 3]: device ID
+ *    - bytes [4, 5]: packet seq
+ *    - bytes [6]: op
+ *        - bits [0, 1]: field (long press, short press, rotate, rotate while held down)
+ *        - bit [2]: direction (left, right)
+ *  - bytes [15, 17]: checksum
 */
 
 Payload::Payload(void* data) {
@@ -40,39 +24,43 @@ Payload::Payload(void* data) {
 }
 
 u32 Payload::device_id() {
-  return (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+  return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
 }
 
 u16 Payload::seq() {
-  u16 seq_high = (data[5] & ~(0b11 << 6)) << 2;
-  u16 seq_low = data[6] >> 6;
+  u16 seq_high = (data[4] & ~0xE0) << 3;
+  u16 seq_low = data[5] >> 5;
+
   return seq_high | seq_low;
 }
 
-Action Payload::action() {
-  u8 action = ((data[6] & 0b1) << 1) | (data[7] >> 7);
-  return static_cast<Action>(action);
+u8 Payload::op_raw() {
+  return data[6];
+}
+
+Field Payload::field() {
+  u8 field = op_raw() >> 6;
+  return static_cast<Field>(field);
 }
 
 Direction Payload::direction() {
-  u8 direction = (data[7] >> 6) & 0b1;
+  u8 direction = (op_raw() >> 5) & 0b1;
   return static_cast<Direction>(direction);
 }
 
+Action Payload::action() {
+  u8 action = op_raw() >> 5;
+  return static_cast<Action>(action);
+}
+
 String Payload::to_string() {
-  Direction direction = this->direction();
-
   switch (action()) {
-    case Action::ROTATE:
-      return "BRIGHTNESS_" + String(direction == Direction::RIGHT ? "UP" : "DOWN");
-
-    case Action::PRESSED_ROTATE:
-      return "COLOR_" + String(direction == Direction::RIGHT ? "COLD" : "WARM");
-
-    case Action::SHORT_PRESS:
-      return "TOGGLE";
-    case Action::LONG_PRESS:
-      return "PRESET";
+    case Action::BRIGHTNESS_UP: return "BRIGHTNESS_UP";
+    case Action::BRIGHTNESS_DOWN: return "BRIGHTNESS_DOWN";
+    case Action::COLOR_COLD: return "COLOR_COLD";
+    case Action::COLOR_WARM: return "COLOR_WARM";
+    case Action::PRESET: return "PRESET";
+    case Action::TOGGLE: return "TOGGLE";
 
     default:
       return "UNKNOWN";

@@ -1,8 +1,9 @@
 #include <Arduino.h>
+#pragma once
 
-#define PAYLOAD_SIZE 9
+#define PAYLOAD_SIZE 13
 
-enum Action: u8 {
+enum Field: u8 {
   SHORT_PRESS = 0,
   PRESSED_ROTATE = 1,
   ROTATE = 2,
@@ -14,6 +15,15 @@ enum Direction: u8 {
   LEFT = 1
 };
 
+enum Action: u8 {
+  COLOR_COLD = (Field::PRESSED_ROTATE << 1) | Direction::RIGHT,
+  COLOR_WARM = (Field::PRESSED_ROTATE << 1) | Direction::LEFT,
+  BRIGHTNESS_UP = (Field::ROTATE << 1) | Direction::RIGHT,
+  BRIGHTNESS_DOWN = (Field::ROTATE << 1) | Direction::LEFT,
+  TOGGLE = (Field::SHORT_PRESS << 1) | Direction::LEFT,
+  PRESET = (Field::LONG_PRESS << 1) | Direction::RIGHT
+};
+
 class Payload {
   private:
     byte* data;
@@ -23,7 +33,11 @@ class Payload {
 
     u32 device_id();
     u16 seq();
-    Action action();
+    u8 op_raw();
+
+    Field field();
     Direction direction();
+    Action action();
+
     String to_string();
 };
