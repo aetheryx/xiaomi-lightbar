@@ -16,15 +16,19 @@
  *    - bytes [6]: op
  *        - bits [0, 1]: field (long press, short press, rotate, rotate while held down)
  *        - bit [2]: direction (left, right)
- *  - bytes [15, 17]: checksum
+ *  - bytes [15, 18]: checksum
 */
+
+static u32 read_u32(byte* data) {
+  return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+}
 
 Payload::Payload(void* data) {
   this->data = reinterpret_cast<byte*>(data);
 }
 
 u32 Payload::device_id() {
-  return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+  return read_u32(&data[0]);
 }
 
 u16 Payload::seq() {
@@ -36,6 +40,10 @@ u16 Payload::seq() {
 
 u8 Payload::op_raw() {
   return data[6];
+}
+
+u32 Payload::checksum() {
+  return read_u32(&data[7]);
 }
 
 Field Payload::field() {
