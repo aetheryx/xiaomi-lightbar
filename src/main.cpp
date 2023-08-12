@@ -1,17 +1,16 @@
 #include <Arduino.h>
-#include <SPI.h>
 #include <printf.h>
-#include "listener.hpp"
+#include "setup/main.hpp"
 
 void setup() {
   Serial.begin(MONITOR_SPEED);
   printf_begin();
 
-  printf("\n\nstart\n");
-
-  listener_setup();
+  setup_main();
 }
+
 
 void loop() {
-  listener_loop();
+  setup_loop();
 }
+
