@@ -3,9 +3,9 @@
 class Radio: public RF24 {
   public:
     Radio();
-    void open_rx();
-    void open_tx();
+    void open();
     void configure();
+    void write(void* payload, u8 length);
 };
 
 static Radio radio;
