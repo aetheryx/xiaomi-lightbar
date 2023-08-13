@@ -21,7 +21,8 @@ enum Action: u8 {
   BRIGHTNESS_UP = (Field::ROTATE << 1) | Direction::RIGHT,
   BRIGHTNESS_DOWN = (Field::ROTATE << 1) | Direction::LEFT,
   TOGGLE = (Field::SHORT_PRESS << 1) | Direction::LEFT,
-  PRESET = (Field::LONG_PRESS << 1) | Direction::RIGHT
+  PRESET = (Field::LONG_PRESS << 1) | Direction::RIGHT,
+  UNKNOWN = 0xFF,
 };
 const Action ACTIONS[] = {
   COLOR_WARM, COLOR_COLD, BRIGHTNESS_DOWN, BRIGHTNESS_UP, TOGGLE
