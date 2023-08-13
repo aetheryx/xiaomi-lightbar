@@ -18,7 +18,11 @@ static String action_precondition(Action action) {
   }
 }
 
+static void verify_checksum(Action action);
+
 void verify_checksums_init() {
+  radio.stopListening();
+
   for (Action action : ACTIONS) {
     printf(
       "\033[2J\033[H Step 3: Verifying checksums\n"
@@ -29,31 +33,44 @@ void verify_checksums_init() {
     );
 
     confirm("  - Ready? (y/n) ");
+    verify_checksum(action);
+  }
 
-    printf("\n  - Broadcasting payloads...\n");
+  radio.startListening();
 
-    for (int i = 0; i < 16; i++) {
-      ActionChecksum ac = action_checksums.at(action).at(i % 2);
-      byte payload[] = {
-        0x89, 0x26, 0x82, // header
-        0x00, 0x00, 0x00, 0x00, // device id
-        0xE0, 0x00, // seq
-        0x00, // op
-        0x00, 0x00, 0x00 // checksum
-      };
+  if (!collect_checksums_completed()) {
+    return collect_checksums_init();
+  }
+}
 
-      write_u32_be(&payload[3], device_id);
+static void verify_checksum(Action action) {
+  printf("\n  - Broadcasting payloads...\n");
+  std::vector<ActionChecksum>* checksums = &action_checksums.at(action);
 
-      payload[7] |= ac.seq >> 3;
-      payload[8] |= (ac.seq & 0b111) << 5;
-      payload[9] = ac.op;
+  for (int i = 0; i < 16; i++) {
+    ActionChecksum checksum = checksums->at(i % 2);
+    byte payload[] = {
+      0x89, 0x26, 0x82, // header
+      0x00, 0x00, 0x00, 0x00, // device id
+      0xE0, 0x00, // seq
+      0x00, // op
+      0x00, 0x00, 0x00 // checksum
+    };
 
-      memcpy(&payload[10], ac.checksum, 3);
+    write_u32_be(&payload[3], device_id);
 
-      radio.write(&payload, sizeof(payload));
-      delay(100);
-    }
+    payload[7] |= checksum.seq >> 3;
+    payload[8] |= (checksum.seq & 0b111) << 5;
+    payload[9] = checksum.op;
 
-    confirm("  - Did your device respond? (y/n) ");
+    memcpy(&payload[10], checksum.checksum, 3);
+
+    radio.write(&payload, sizeof(payload));
+    delay(action == Action::TOGGLE ? 500 : 10);
+  }
+
+  char c = ask("  - Did your device respond? (y/n) ");
+  if (c != 'y') {
+    checksums->clear();
   }
 }
