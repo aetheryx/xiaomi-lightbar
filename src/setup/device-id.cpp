@@ -2,7 +2,7 @@
 #include "setup/main.hpp"
 #include "setup/collect-checksums.hpp"
 
-u32 device_id = 0x55be661f;
+u32 device_id = 0x00000000;
 
 void device_id_init() {
   printf(
