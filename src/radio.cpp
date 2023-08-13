@@ -1,7 +1,7 @@
 #include <RF24.h>
 #include "radio.hpp"
 
-#define RETRIES 16
+#define RETRIES 8
 
 const u8 address_width = 5;
 const u8 address[address_width] = { 0xA3, 0x9B, 0x22, 0x67, 0xAA };
@@ -38,13 +38,11 @@ void Radio::open() {
 }
 
 void Radio::write(void* payload, u8 length) {
-  this->stopListening();
+  radio.stopListening();
 
   for (u8 i = 0; i < RETRIES; i++) {
     this->writeFast(payload, length, true);
     delay(20);
     yield();
   }
-
-  this->startListening();
 }
