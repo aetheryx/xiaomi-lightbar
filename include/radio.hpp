@@ -1,3 +1,4 @@
+#pragma once
 #include <RF24.h>
 
 class Radio: public RF24 {

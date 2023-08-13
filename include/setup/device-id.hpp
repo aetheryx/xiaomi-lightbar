@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 
 extern u32 device_id;

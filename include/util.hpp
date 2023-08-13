@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 
 u32 read_u32_be(byte* data);
