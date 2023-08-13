@@ -1,7 +1,6 @@
 #include "setup/main.hpp"
 #include "setup/device-id.hpp"
 #include "setup/collect-checksums.hpp"
-#include "util.hpp"
 
 byte buf[PAYLOAD_SIZE];
 Payload payload(&buf[3]);
@@ -10,7 +9,7 @@ void setup_main() {
   radio.configure();
   radio.open();
 
-  collect_checksums_init();
+  device_id_init();
 }
 
 void setup_loop() {
