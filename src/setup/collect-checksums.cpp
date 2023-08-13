@@ -22,8 +22,10 @@ static void print_progress() {
 }
 
 void collect_checksums_init() {
-  for (Action action : ACTIONS) {
-    action_checksums[action] = std::vector<ActionChecksum>();
+  if (action_checksums.empty()) {
+    for (Action action : ACTIONS) {
+      action_checksums[action] = std::vector<ActionChecksum>();
+    }
   }
 
   printf("\033[2J\n");
