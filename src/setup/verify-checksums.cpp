@@ -1,5 +1,6 @@
 #include "setup/verify-checksums.hpp"
 #include "setup/device-id.hpp"
+#include "control/control.hpp"
 #include "control/send-action.hpp"
 #include "util.hpp"
 #include "radio.hpp"
@@ -39,6 +40,8 @@ void verify_checksums_init() {
 
   if (!collect_checksums_completed()) {
     return collect_checksums_init();
+  } else {
+    return control_init();
   }
 }
 
