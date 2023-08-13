@@ -36,8 +36,6 @@ void verify_checksums_init() {
     verify_checksum(action);
   }
 
-  radio.startListening();
-
   if (!collect_checksums_completed()) {
     return collect_checksums_init();
   }

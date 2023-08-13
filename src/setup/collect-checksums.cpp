@@ -28,6 +28,8 @@ void collect_checksums_init() {
     }
   }
 
+  radio.open();
+
   printf("\033[2J\n");
   print_progress();
 }

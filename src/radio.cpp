@@ -1,7 +1,7 @@
 #include <RF24.h>
 #include "radio.hpp"
 
-#define RETRIES 8
+#define RETRIES 12
 
 const u8 address_width = 5;
 const u8 address[address_width] = { 0xA3, 0x9B, 0x22, 0x67, 0xAA };
@@ -24,15 +24,14 @@ void Radio::configure() {
   this->disableAckPayload();
   this->disableDynamicPayloads();
   this->setRetries(0, 0);
+  this->setPALevel(rf24_pa_dbm_e::RF24_PA_LOW);
+  this->setPayloadSize(13);
 }
 
 void Radio::open() {
   this->openReadingPipe(0, address);
   this->startListening();
-
   this->openWritingPipe(address);
-  this->setPALevel(rf24_pa_dbm_e::RF24_PA_LOW);
-  this->setPayloadSize(13);
 
   radio.printDetails();
 }
