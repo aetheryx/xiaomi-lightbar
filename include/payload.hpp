@@ -37,12 +37,12 @@ class Payload {
     u32 device_id();
     u16 seq();
     u8 op_raw();
-    u32 checksum();
+    u8* checksum();
 
     Field field();
     Direction direction();
     Action action();
 
-
     String to_string();
+    static String action_to_string(Action action);
 };

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "payload.hpp"
+#include "util.hpp"
 
 /**
  * payload spec
@@ -19,16 +20,12 @@
  *  - bytes [15, 18]: checksum
 */
 
-static u32 read_u32(byte* data) {
-  return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
-}
-
 Payload::Payload(void* data) {
   this->data = reinterpret_cast<byte*>(data);
 }
 
 u32 Payload::device_id() {
-  return read_u32(&data[0]);
+  return read_u32_be(&data[0]);
 }
 
 u16 Payload::seq() {
@@ -42,8 +39,8 @@ u8 Payload::op_raw() {
   return data[6];
 }
 
-u32 Payload::checksum() {
-  return read_u32(&data[7]);
+u8* Payload::checksum() {
+  return &data[7];
 }
 
 Field Payload::field() {
@@ -61,8 +58,8 @@ Action Payload::action() {
   return static_cast<Action>(action);
 }
 
-String Payload::to_string() {
-  switch (action()) {
+String Payload::action_to_string(Action action) {
+  switch (action) {
     case Action::BRIGHTNESS_UP: return "BRIGHTNESS_UP";
     case Action::BRIGHTNESS_DOWN: return "BRIGHTNESS_DOWN";
     case Action::COLOR_COLD: return "COLOR_COLD";
@@ -73,4 +70,8 @@ String Payload::to_string() {
     default:
       return "UNKNOWN";
   }
+}
+
+String Payload::to_string() {
+  return this->action_to_string(this->action());
 }
